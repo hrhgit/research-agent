@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Model web search",
+    "description": "Search with the selected model through Magpie Responses and return its source links to DSH."
+  }
+}

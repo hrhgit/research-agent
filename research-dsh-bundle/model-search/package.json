@@ -1,0 +1,24 @@
+{
+  "name": "dsh-model-native-search",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "description": "Run DSH web searches using the selected model's built-in search.",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": ["index.js", "responses.js", "cordis.patch.yml", "locale", "icon.svg"],
+  "peerDependencies": {
+    "@deepseek-ai/dsh-llm": "^0.2.2-rc.3",
+    "@deepseek-ai/schemastery": "~3.19.0"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": { "patch": "./cordis.patch.yml" }
+  }
+}

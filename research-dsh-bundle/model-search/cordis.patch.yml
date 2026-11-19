@@ -1,0 +1,21 @@
+- insert:
+    - id: model-native-search
+      name: dsh-model-native-search
+      config:
+        providers:
+          magpie-responses:
+            - codex/gpt-6-luna
+            - codex/gpt-6.1-sol
+            - codex/gpt-6.1-terra
+            - codex/gpt-6.2-sol
+            - codex/gpt-6.2-astra
+            - codex/gpt-6-astra
+            - hope/gpt-6.1-sol
+- id: web
+  config:
+    searchProvider: model-native
+    fetchProvider: http
+- id: web-search-deepseek
+  disabled: true
+- id: web-deepseek-api
+  disabled: true

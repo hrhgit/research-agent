@@ -1,0 +1,304 @@
+# Machine paths belong in the profile, never in the reusable bundle.
+- insert:
+    - id: dsh-research-agent
+      name: dsh-research-agent
+    - id: preset-research
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: research
+        name: 研究模式
+        description: 先查历史、提出假设、做小规模实验，再根据效果和用时决定下一步。
+        order: 2
+        plugins:
+          - id: research-workflow
+            name: dsh-research-agent/agent
+            config:
+              role: controller
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: You are a research agent powered by the {{model}} model.
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              # Required by DSH; use the same instruction budget as Standard mode.
+              maxBytes: 65536
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: tool-jobs
+            name: '@deepseek-ai/dsh-tool-jobs'
+          - id: tool-schedule
+            name: '@deepseek-ai/dsh-tool-schedule'
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+          - id: command-goal
+            name: '@deepseek-ai/dsh-command-goal'
+          - id: tool-goal
+            name: '@deepseek-ai/dsh-tool-goal'
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+          # Controller discovery and continuation use research_assignment_list
+          # and research_assignment_resume so dispatch state stays in SQLite.
+          # DSH 0.2.2 no longer exports the standalone list-agents plugin.
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: tool-todo
+            name: '@deepseek-ai/dsh-tool-todo'
+            config:
+              allowParallelInProgress: true
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+
+# Independent child presets keep the division of labor enforceable. They share
+# the host's LLM and working directory, but each receives only the research
+# tools needed for its role. The controller selects one through dsh-tool-subagent.
+- insert:
+    - id: preset-research-scout
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: research-scout
+        name: 研究侦察员
+        description: 只回看历史、找候选方向和小规模筛选方案，不执行实验也不写正式结论。
+        order: 10
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: You are a research scout powered by the {{model}} model.
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: tool-web
+            name: '@deepseek-ai/dsh-tool-web'
+            config:
+              search: true
+              fetch: true
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+          - id: tool-subagent-control
+            name: '@deepseek-ai/dsh-tool-subagent-control'
+          - id: research-role
+            name: dsh-research-agent/agent
+            config:
+              role: scout
+
+    - id: preset-research-runner
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: research-runner
+        name: 研究执行员
+        description: 按固定任务、规模和工具版本执行实验，只提交运行结果和证据。
+        order: 11
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: You are a research runner powered by the {{model}} model.
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+            config:
+              write: false
+              edit: false
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: tool-jobs
+            name: '@deepseek-ai/dsh-tool-jobs'
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+          - id: tool-subagent-control
+            name: '@deepseek-ai/dsh-tool-subagent-control'
+          - id: research-role
+            name: dsh-research-agent/agent
+            config:
+              role: runner
+
+    - id: preset-research-auditor
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: research-auditor
+        name: 研究复核员
+        description: 独立核对运行状态、指标、文件和证据，不修改研究结论。
+        order: 12
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: You are an independent research auditor powered by the {{model}} model.
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+            config:
+              write: false
+              edit: false
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+          - id: tool-subagent-control
+            name: '@deepseek-ai/dsh-tool-subagent-control'
+          - id: research-role
+            name: dsh-research-agent/agent
+            config:
+              role: auditor
+
+    - id: preset-research-synthesizer
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: research-synthesizer
+        name: 研究汇总员
+        description: 汇总记录、矛盾和边界，提交带记录编号的草案供总控确认。
+        order: 13
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: You are a research synthesizer powered by the {{model}} model.
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+          - id: tool-subagent-control
+            name: '@deepseek-ai/dsh-tool-subagent-control'
+          - id: research-role
+            name: dsh-research-agent/agent
+            config:
+              role: synthesizer
+
+    - id: preset-research-tool-engineer
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: research-tool-engineer
+        name: 研究工具工程师
+        description: 登记不可变工具版本并设计影子验证，不能自行接受或替换工具。
+        order: 14
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: You are a research tool engineer powered by the {{model}} model.
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: tool-jobs
+            name: '@deepseek-ai/dsh-tool-jobs'
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+          - id: tool-subagent-control
+            name: '@deepseek-ai/dsh-tool-subagent-control'
+          - id: research-role
+            name: dsh-research-agent/agent
+            config:
+              role: tool-engineer
